@@ -31,9 +31,6 @@ int8_t validHeartRate; //indicator to show if the heart rate calculation is vali
 long lastfingerTime=0;
 long contfingerDur=0;
 
-//byte pulseLED = 11; //Must be on PWM pin
-//byte readLED = 13; //Blinks with each data read
-
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
 #define OLED_RESET    -1 // Reset pin # (or -1 if sharing Arduino reset pin)
@@ -48,15 +45,6 @@ void setup()
   display.display();
   delay(3000);
 
-  //pinMode(pulseLED, OUTPUT);
-  //pinMode(readLED, OUTPUT);
-  /*
-  // Initialize sensor
-  if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) //Use default I2C port, 400kHz speed
-  {
-    Serial.println(F("MAX30105 was not found. Please check wiring/power."));
-    while (1);
-  }*/
   particleSensor.begin(Wire, I2C_SPEED_FAST); //Initialize sensor
   //Serial.println(F("Attach sensor to finger with rubber band. Press any key to start conversion"));
   //while (Serial.available() == 0) ; //wait until user presses a key
@@ -102,10 +90,6 @@ void loop()
     irBuffer[i] = particleSensor.getIR();
     particleSensor.nextSample(); //We're finished with this sample so move to next sample
 
-    //Serial.print(F("red="));
-    //Serial.print(redBuffer[i], DEC);
-    //Serial.print(F(", ir="));
-    //Serial.println(irBuffer[i], DEC);
     display.clearDisplay();
     display.setTextSize(2);       
     display.setTextColor(WHITE); 
@@ -123,7 +107,7 @@ void loop()
   //Continuously taking samples from MAX30102.  Heart rate and SpO2 are calculated every 1 second
   while (1)
   {  
-    if (contfingerDur > 10000 and validSPO2 == 1){ // wait for 10 secs
+    if (contfingerDur > 10000 && validSPO2 == 1){ // wait for 10 secs
       display.clearDisplay();
       display.setTextSize(2);//Near it display the average BPM you can display the BPM if you want
       display.setTextColor(WHITE); 
@@ -170,15 +154,22 @@ void loop()
         redBuffer[i] = particleSensor.getRed();
         lastfingerTime = 0;contfingerDur=0;
       }
-
       irBuffer[i] = particleSensor.getIR();
       particleSensor.nextSample(); //We're finished with this sample so move to next sample
 
-      
+      if (lastfingerTime == 0){
+        display.clearDisplay();
+        display.setTextSize(2);       
+        display.setTextColor(WHITE); 
+        display.setCursor(30,0);                
+        display.println("Wait...");             
+        display.display();
+        lastfingerTime = millis();
+      }
+      //contfingerDur=millis()-lastfingerTime;
     }
-
+    contfingerDur=millis()-lastfingerTime;
     //After gathering 25 new samples recalculate HR and SP02
     maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
-  
   }
 }
